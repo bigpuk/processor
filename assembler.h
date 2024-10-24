@@ -3,17 +3,21 @@
 
 #include <stdio.h>
 
-struct code_info
+#include "..\stack\include\INCLUDE.h"
+
+struct Assembler
 {
-    int* code;
-    size_t code_size;
+    int* machine_code;
+    char* code_buffer;
+    char** cmd_prts;
+
+    size_t code_buffer_size;
+    size_t machine_code_size;
+    size_t cmd_ptrs_num;
     
     size_t funcsion_has_arg;
     int current_function;
-};
 
-struct Register
-{
     int* reg_array;
 
     size_t reg_elem_num;
@@ -55,6 +59,5 @@ enum cmd
 
 #define file_name "code.txt"
 
-
-int assembler(code_info* data, FILE* code_data, stack* stk, Register* reg);
+int assembler(Assembler* data, FILE* code_data, stack* stk);
 #endif
