@@ -72,9 +72,11 @@ int assembler(Assembler* data, FILE* code_data, stack* stk)
         printf("ERROR!(cmd_ptrs)");
     }
 
-    data->cmd_ptrs_num = 0;
+    strcat(data->code_buffer, "\0");
 
     beginning_check = 1;
+
+    data->cmd_ptrs_num = 0;
 
     for(size_t current_elem = 0; current_elem < data->code_buffer_size; current_elem++)
     {
@@ -101,14 +103,6 @@ int assembler(Assembler* data, FILE* code_data, stack* stk)
     if(!data->machine_code)
     {
         printf("ERROR!(machine code)");
-
-        return 1;
-    }
-
-    data->reg_array = (int*) calloc((size_t)26, sizeof(int));
-    if(!data->reg_array)
-    {
-        printf("Out of memory!");
 
         return 1;
     }

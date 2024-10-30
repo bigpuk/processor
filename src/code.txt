@@ -1,8 +1,0 @@
-push 1
-push 2
-push 3
-proc_dump
-add
-proc_dump
-stack_dump
-hlt

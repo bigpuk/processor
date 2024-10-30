@@ -8,22 +8,31 @@
 #include "processor.h"
 #include "proc_dump.h"
 
-int processor(Assembler* data, stack* stk)
+int processor(Assembler* asm_data, SPU* spu_data)
 {
-    assert(data);
+    assert(asm_data);
+    assert(spu_data);
+
+    spu_data->reg_array = (int*) calloc((size_t)26, sizeof(int));
+    if(!spu_data->reg_array)
+    {
+        printf("Out of memory!");
+
+        return 1;
+    }
 
     while(1)
     {
-        switch(data->machine_code[data->ip])
+        switch(asm_data->machine_code[asm_data->ip])
         {
             case HLT:       {
                                 return 0;
                             }
             
             case PUSH:      {
-                                (data->ip)++;
+                                (asm_data->ip)++;
 
-                                int arg = data->machine_code[data->ip];
+                                int arg = asm_data->machine_code[asm_data->ip];
 
                                 stack_push(stk, arg);
 
@@ -101,9 +110,9 @@ int processor(Assembler* data, stack* stk)
                             }
 
             case PUSHR:     {
-                                (data->ip)++;
+                                (asm_data->ip)++;
 
-                                int arg = data->reg_array[data->machine_code[data->ip]];
+                                int arg = asm_data->reg_array[asm_data->machine_code[asm_data->ip]];
 
                                 stack_push(stk, arg);
 
@@ -111,19 +120,19 @@ int processor(Assembler* data, stack* stk)
                             }
 
             case POPR :     {
-                                (data->ip)++;
+                                (asm_data->ip)++;
 
-                                data->reg_array[data->machine_code[data->ip]] = stack_pop(stk);
+                                asm_data->reg_array[asm_data->machine_code[asm_data->ip]] = stack_pop(stk);
 
                                 break;
                             }
 
             case JMP:       {
-                                (data->ip)++;
+                                (asm_data->ip)++;
 
-                                size_t jump_ptr = data->machine_code[data->ip];
+                                size_t jump_ptr = asm_data->machine_code[asm_data->ip];
 
-                                (data->ip) = jump_ptr - 1;
+                                (asm_data->ip) = jump_ptr - 1;
 
                                 break;
                             }
@@ -132,13 +141,13 @@ int processor(Assembler* data, stack* stk)
                                 int compare_A = stack_pop(stk);
                                 int compare_B = stack_pop(stk);
 
-                                (data->ip)++;
+                                (asm_data->ip)++;
 
                                 if(compare_B < compare_A)
                                 {
-                                    size_t jump_ptr = data->machine_code[data->ip];
+                                    size_t jump_ptr = asm_data->machine_code[asm_data->ip];
 
-                                    (data->ip) = jump_ptr - 1;
+                                    (asm_data->ip) = jump_ptr - 1;
                                 }
 
                                 break;
@@ -148,13 +157,13 @@ int processor(Assembler* data, stack* stk)
                                 int compare_A = stack_pop(stk);
                                 int compare_B = stack_pop(stk);
 
-                                (data->ip)++;
+                                (asm_data->ip)++;
 
                                 if(compare_B <= compare_A)
                                 {
-                                    size_t jump_ptr = data->machine_code[data->ip];
+                                    size_t jump_ptr = asm_data->machine_code[asm_data->ip];
 
-                                    (data->ip) = jump_ptr - 1;
+                                    (asm_data->ip) = jump_ptr - 1;
                                 }
 
                                 break;
@@ -164,13 +173,13 @@ int processor(Assembler* data, stack* stk)
                                 int compare_A = stack_pop(stk);
                                 int compare_B = stack_pop(stk);
                                 
-                                (data->ip)++;
+                                (asm_data->ip)++;
 
                                 if(compare_B > compare_A)
                                 {
-                                    size_t jump_ptr = data->machine_code[data->ip];
+                                    size_t jump_ptr = asm_data->machine_code[asm_data->ip];
 
-                                    (data->ip) = jump_ptr - 1;
+                                    (asm_data->ip) = jump_ptr - 1;
                                 }
 
                                 break;
@@ -180,13 +189,13 @@ int processor(Assembler* data, stack* stk)
                                 int compare_A = stack_pop(stk);
                                 int compare_B = stack_pop(stk);
 
-                                (data->ip)++;
+                                (asm_data->ip)++;
 
                                 if(compare_B >= compare_A)
                                 {
-                                    size_t jump_ptr = data->machine_code[data->ip];
+                                    size_t jump_ptr = asm_data->machine_code[asm_data->ip];
 
-                                    (data->ip) = jump_ptr - 1;
+                                    (asm_data->ip) = jump_ptr - 1;
                                 }
 
                                 break;
@@ -196,13 +205,13 @@ int processor(Assembler* data, stack* stk)
                                 int compare_A = stack_pop(stk);
                                 int compare_B = stack_pop(stk);
 
-                                (data->ip)++;
+                                (asm_data->ip)++;
 
                                 if(compare_B == compare_A)
                                 {
-                                    size_t jump_ptr = data->machine_code[data->ip];
+                                    size_t jump_ptr = asm_data->machine_code[asm_data->ip];
 
-                                    (data->ip) = jump_ptr - 1;
+                                    (asm_data->ip) = jump_ptr - 1;
                                 }
 
                                 break;
@@ -212,13 +221,13 @@ int processor(Assembler* data, stack* stk)
                                 int compare_A = stack_pop(stk);
                                 int compare_B = stack_pop(stk);
 
-                                (data->ip)++;
+                                (asm_data->ip)++;
 
                                 if(compare_B != compare_A)
                                 {
-                                    size_t jump_ptr = data->machine_code[data->ip];
+                                    size_t jump_ptr = asm_data->machine_code[asm_data->ip];
 
-                                    (data->ip) = jump_ptr - 1;
+                                    (asm_data->ip) = jump_ptr - 1;
                                 }
 
                                 break;
@@ -231,14 +240,14 @@ int processor(Assembler* data, stack* stk)
                             }
 
             case PROCDUMP:  {
-                                PROC_DUMP(data);
+                                PROC_DUMP(asm_data);
 
                                 break;
                             }
             
             default:
-                printf("ERROR: %d", data->machine_code[data->ip]);
+                printf("ERROR: %d", asm_data->machine_code[asm_data->ip]);
         }
-        (data->ip)++;
+        (asm_data->ip)++;
     }
 }

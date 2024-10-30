@@ -3,6 +3,13 @@
 
 #include "assembler.h"
 
-int processor(Assembler* data, stack* stk);
+struct SPU
+{
+    int* reg_array;
+
+    size_t reg_elem_num;
+};
+
+int processor(Assembler* asm_data, SPU spu_data);
 
 #endif

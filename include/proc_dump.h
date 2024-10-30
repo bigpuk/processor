@@ -2,6 +2,7 @@
 #define PROC_DUMP_H
 
 #include "assembler.h"
+#include "processor.h"
 
 int proc_dump(Assembler* data);
 

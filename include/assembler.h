@@ -18,10 +18,6 @@ struct Assembler
     size_t cmd_ptrs_num;
     
     int current_function;
-
-    int* reg_array;
-
-    size_t reg_elem_num;
 };
 
 enum cmd
