@@ -63,6 +63,8 @@ int assembler(Assembler* data, FILE* code_data, stack* stk)
         }
         else beginning_check = 0;
     }
+
+    strcat(data->code_buffer, "\0");
     
     data->cmd_ptrs = (char**) calloc(data->cmd_ptrs_num, sizeof(char*));
     if(!data->cmd_ptrs)
@@ -70,7 +72,7 @@ int assembler(Assembler* data, FILE* code_data, stack* stk)
         printf("ERROR!(cmd_ptrs)");
     }
 
-    strcat(data->code_buffer, "\0");
+    data->cmd_ptrs_num = 0;
 
     beginning_check = 1;
 
@@ -88,8 +90,6 @@ int assembler(Assembler* data, FILE* code_data, stack* stk)
     }
 
     char* cmd = (char*) calloc(100, sizeof(char));
-    printf("%d\n", sizeof(cmd));
-    printf("%p\n", cmd);
     if(!cmd)
     {
         printf("ERROR!(cmd)");
