@@ -4,6 +4,7 @@
 #include <assert.h>
 
 #include "assembler.h"
+#include "processor.h"
 #include "..\..\stack\include\INCLUDE.h"
 
 #define NonArgCmd(command) do {     \
@@ -16,11 +17,10 @@
 
 int read_user_code(char* cmd);
 
-int assembler(Assembler* data, FILE* code_data, stack* stk)
+int assembler(Assembler* data, FILE* code_data)
 {
     assert(data);
     assert(code_data);
-    assert(stk);
 
     struct stat assembler_info = {};
 
@@ -113,15 +113,19 @@ int assembler(Assembler* data, FILE* code_data, stack* stk)
 
     data->cmd_ptrs_num = 0;
     
-    while(1)  //TODO macro
+    //TODO метки
+    //TODO дебаг джампов и всего
+    //TODO функции
+
+    while(1)  //TODO macro(антикопипаст)
     {
         sscanf(data->cmd_ptrs[data->cmd_ptrs_num], "%s", cmd);
 
-        int cmd_num = read_user_code(cmd);
+        int cmd_type = read_user_code(cmd);
         
-        if(cmd_num == PUSH)
+        if(cmd_type == PUSH)
         {
-            data->machine_code[machine_code_elem] = cmd_num;
+            data->machine_code[machine_code_elem] = cmd_type;
             machine_code_elem++;
 
             data->cmd_ptrs[data->cmd_ptrs_num] += strlen("push");
@@ -130,16 +134,14 @@ int assembler(Assembler* data, FILE* code_data, stack* stk)
             
             int arg = atoi(cmd);
 
-            printf("%d", arg);
-
             data->machine_code[machine_code_elem] = arg;
             machine_code_elem++;
 
             (data->machine_code_size)++;
         }
-        else if(cmd_num == PUSHR)
+        else if(cmd_type == PUSHR)
         {
-            data->machine_code[machine_code_elem] = cmd_num;
+            data->machine_code[machine_code_elem] = cmd_type;
             machine_code_elem++;
 
             data->code_buffer += strlen("pushr");
@@ -153,9 +155,9 @@ int assembler(Assembler* data, FILE* code_data, stack* stk)
 
             (data->machine_code_size)++;
         }
-        else if(cmd_num == POPR)
+        else if(cmd_type == POPR)
         {
-            data->machine_code[machine_code_elem] = cmd_num;
+            data->machine_code[machine_code_elem] = cmd_type;
             machine_code_elem++;
 
             data->code_buffer += strlen("popr");
@@ -169,85 +171,95 @@ int assembler(Assembler* data, FILE* code_data, stack* stk)
 
             (data->machine_code_size)++;
         }
-        else if(cmd_num == JMP || cmd_num == JAE || cmd_num == JBE || cmd_num == JNE)
+        else if(cmd_type == JMP || cmd_type == JAE || cmd_type == JBE || cmd_type == JNE)
         {
-            data->machine_code[machine_code_elem] = cmd_num;
+            data->machine_code[machine_code_elem] = cmd_type;
             machine_code_elem++;
 
-            data->code_buffer += strlen("jmp");
+            data->cmd_ptrs[data->cmd_ptrs_num] += strlen("jmp");
 
             sscanf(data->cmd_ptrs[data->cmd_ptrs_num], "%s", cmd);
 
-            int ip_num = (int) cmd[0] - '0';
+            int ip_num = atoi(cmd);
 
             data->machine_code[machine_code_elem] = ip_num;
             machine_code_elem++;
 
             (data->machine_code_size)++;
         }
-        else if(cmd_num == JA || cmd_num == JB || cmd_num == JE)
+        else if(cmd_type == JA || cmd_type == JB || cmd_type == JE)
         {
-            data->machine_code[machine_code_elem] = cmd_num;
+            data->machine_code[machine_code_elem] = cmd_type;
             machine_code_elem++;
 
-            data->code_buffer += strlen("ja");
+            data->cmd_ptrs[data->cmd_ptrs_num] += strlen("ja");
 
             sscanf(data->cmd_ptrs[data->cmd_ptrs_num], "%s", cmd);
 
-            int ip_num = (int) cmd[0] - '0';
+            int ip_num = atoi(cmd);
 
             data->machine_code[machine_code_elem] = ip_num;
             machine_code_elem++;
 
             (data->machine_code_size)++;
         }
-        else if(cmd_num >= POP && cmd_num <= PROCDUMP)
+        else if(cmd_type >= POP && cmd_type <= PROCDUMP)
         {
-            data->machine_code[machine_code_elem] = cmd_num;
+            data->machine_code[machine_code_elem] = cmd_type;
             machine_code_elem++;
         }
-        else if(cmd_num == HLT)
+        else if(cmd_type == HLT)
         {
-            data->machine_code[machine_code_elem] = cmd_num;
+            data->machine_code[machine_code_elem] = cmd_type;
             machine_code_elem++;
 
             break;
         }
-        else printf("ERROR: %d", cmd_num);
+        else printf("Assembler ERROR: %d", cmd_type);
 
         (data->cmd_ptrs_num)++;
 
         (data->machine_code_size)++;
     }
 
+    data->machine_code_size = machine_code_elem;
+
+    FILE* asm_bin = fopen(output_file_name, "w");
+
+    for(machine_code_elem = 0; machine_code_elem < data->machine_code_size; machine_code_elem++)
+    {
+        fprintf(asm_bin, "%d", data->machine_code[machine_code_elem]);
+    }
+    
+
     return 0;
 }
 
 int read_user_code(char* cmd)
 {
-    if(strcmp(cmd, "hlt"))       return HLT;
-    if(strcmp(cmd, "push"))      return PUSH;
-    if(strcmp(cmd, "pop"))       return POP;
-    if(strcmp(cmd, "sub"))       return SUB;
-    if(strcmp(cmd, "add"))       return ADD;
-    if(strcmp(cmd, "mul"))       return MUL;
-    if(strcmp(cmd, "div"))       return DIV;
-    if(strcmp(cmd, "out"))       return OUT;
-    if(strcmp(cmd, "in"))        return IN;
-    if(strcmp(cmd, "sqrt"))      return SQRT;
-    if(strcmp(cmd, "sin"))       return SIN;
-    if(strcmp(cmd, "cos"))       return COS;
-    if(strcmp(cmd, "pushr"))     return PUSHR;
-    if(strcmp(cmd, "popr"))      return POPR;
-    if(strcmp(cmd, "jmp"))       return JMP;
-    if(strcmp(cmd, "ja"))        return JA;
-    if(strcmp(cmd, "jae"))       return JAE;
-    if(strcmp(cmd, "jb"))        return JB;
-    if(strcmp(cmd, "jbe"))       return JBE;
-    if(strcmp(cmd, "je"))        return JE;
-    if(strcmp(cmd, "jae"))       return JAE;
-    if(strcmp(cmd, "stackdump")) return STACKDUMP;
-    if(strcmp(cmd, "procdump"))  return PROCDUMP;
+    if(strcmp(cmd, "hlt") == 0)       return HLT;
+    if(strcmp(cmd, "push") == 0)      return PUSH;
+    if(strcmp(cmd, "pop") == 0)       return POP;
+    if(strcmp(cmd, "sub") == 0)       return SUB;
+    if(strcmp(cmd, "add") == 0)       return ADD;
+    if(strcmp(cmd, "mul") == 0)       return MUL;
+    if(strcmp(cmd, "div") == 0)       return DIV;
+    if(strcmp(cmd, "out") == 0)       return OUT;
+    if(strcmp(cmd, "in") == 0)        return IN;
+    if(strcmp(cmd, "sqrt") == 0)      return SQRT;
+    if(strcmp(cmd, "sin") == 0)       return SIN;
+    if(strcmp(cmd, "cos") == 0)       return COS;
+    if(strcmp(cmd, "pushr") == 0)     return PUSHR;
+    if(strcmp(cmd, "popr") == 0)      return POPR;
+    if(strcmp(cmd, "jmp") == 0)       return JMP;
+    if(strcmp(cmd, "ja") == 0)        return JA;
+    if(strcmp(cmd, "jae") == 0)       return JAE;
+    if(strcmp(cmd, "jb") == 0)        return JB;
+    if(strcmp(cmd, "jbe") == 0)       return JBE;
+    if(strcmp(cmd, "je") == 0)        return JE;
+    if(strcmp(cmd, "jae") == 0)       return JAE;
+    if(strcmp(cmd, "stackdump") == 0) return STACKDUMP;
+    if(strcmp(cmd, "procdump") == 0)  return PROCDUMP;
 
     return -1337;
 }

@@ -65,6 +65,10 @@ enum cmd
 // };
 
 #define file_name "code.txt"
+#define output_file_name "asm_bin.txt"
 
-int assembler(Assembler* data, FILE* code_data, stack* stk);
+#define bug printf("__DED__");
+
+int assembler(Assembler* data, FILE* code_data);
+
 #endif

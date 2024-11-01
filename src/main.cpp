@@ -6,13 +6,14 @@
 
 int main()
 {
-    Assembler data = {};
-    stack stk = {};
+    Assembler asm_data = {};
+    SPU spu_data = {};
+    spu_data.stk = {};
 
     FILE* code_data = fopen(file_name, "r"); 
 
-    stack_ctor(&stk, 16);
+    stack_ctor(&(spu_data.stk), 16);
 
-    assembler(&data, code_data, &stk);
-    processor(&data, &stk);
+    assembler(&asm_data, code_data);
+    processor(&asm_data, &spu_data);
 }

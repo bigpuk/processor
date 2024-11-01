@@ -4,11 +4,11 @@
 #include "assembler.h"
 #include "processor.h"
 
-int proc_dump(Assembler* data);
+int proc_dump(Assembler* asm_data, SPU* spu_data);
 
-#define PROC_DUMP(arg) do   \
+#define PROC_DUMP(arg1, arg2) do   \
 {                           \
-    proc_dump(arg);         \
+    proc_dump(arg1, arg2);         \
 } while(0)
 
 #endif
