@@ -26,6 +26,7 @@ prepare:
 
 $(EXE_NAME): $(FILE_OBJECTS)
 	g++ $^ $(DED_FLAGS) -L ../stack -lmystack -o $(EXE_NAME)
+# TODO var
 
 build/%.o: src/%.cpp
 	g++ -c $^ -I./include -I../../stack/include/INCLUDE.h -o $@

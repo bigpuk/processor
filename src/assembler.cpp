@@ -5,93 +5,109 @@
 
 #include "assembler.h"
 #include "processor.h"
-#include "..\..\stack\include\INCLUDE.h"
+#include "../../stack/include/INCLUDE.h"
 
-#define NonArgCmd(command) do {     \
-    command();                      \
+#define NonArgCmd(enum) do {                            \
+    asm_data->machine_code[machine_code_elem] = enum;   \
+    machine_code_elem++;                                \
 } while(0)
 
-#define ArgCmd(command, arg) do {   \
-    command(arg);                   \
+#define ArgCmd(command_len, enum) do {                                  \
+    asm_data->machine_code[machine_code_elem] = enum;                   \
+    machine_code_elem++;                                                \
+                                                                        \
+    asm_data->cmd_ptrs[asm_data->cmd_ptrs_num] += strlen(command_len);  \
+                                                                        \
+    sscanf(asm_data->cmd_ptrs[asm_data->cmd_ptrs_num], "%s", cmd);      \
+                                                                        \
+    int arg = -7;                                                       \
+                                                                        \
+    if(enum == PUSHR || enum == POPR) arg = (int) cmd[0] - '0';         \
+    else arg = atoi(cmd);                                               \
+                                                                        \
+    asm_data->machine_code[machine_code_elem] = arg;                    \
+    machine_code_elem++;                                                \
+                                                                        \
+    (asm_data->machine_code_size)++;                                    \
 } while(0)
 
 int read_user_code(char* cmd);
 
-int assembler(Assembler* data, FILE* code_data)
+int assembler(Assembler* asm_data, FILE* code_data)
 {
-    assert(data);
+    assert(asm_data);
     assert(code_data);
 
     struct stat assembler_info = {};
 
     stat(file_name, &assembler_info);
 
-    data->code_buffer_size = assembler_info.st_size;    
+    asm_data->code_buffer_size = assembler_info.st_size;    
 
-    data->code_buffer = (char*) calloc(data->code_buffer_size + 1, sizeof(char));
-    if(!data->code_buffer)
+    asm_data->code_buffer = (char*) calloc(asm_data->code_buffer_size + 1, sizeof(char));
+    if(!asm_data->code_buffer)
     {
         printf("Out of memory!");
 
         return 1;
     }
 
-    fread(data->code_buffer, data->code_buffer_size, sizeof(char), code_data);
+    fread(asm_data->code_buffer, asm_data->code_buffer_size, sizeof(char), code_data);
 
-    data->cmd_ptrs_num = 0;
+    asm_data->cmd_ptrs_num = 0;
 
-    for(size_t current_symbol = 0; current_symbol < data->code_buffer_size; current_symbol++)
+    for(size_t current_symbol = 0; current_symbol < asm_data->code_buffer_size; current_symbol++)
     {
-        if(data->code_buffer[current_symbol] == '\r' || data->code_buffer[current_symbol] == '\n')
+        if(asm_data->code_buffer[current_symbol] == '\r' || asm_data->code_buffer[current_symbol] == '\n')
         {
-            data->code_buffer[current_symbol] = '\0';
+            asm_data->code_buffer[current_symbol] = '\0';
         }
     }
 
     size_t beginning_check = 1;
 
-    for(size_t current_elem = 0; current_elem < data->code_buffer_size; current_elem++)
+    for(size_t current_elem = 0; current_elem < asm_data->code_buffer_size; current_elem++)
     {
         if(beginning_check)
         {
-            (data->cmd_ptrs_num)++;
+            (asm_data->cmd_ptrs_num)++;
         }
 
-        if(((data->code_buffer)[current_elem] == '\0') && ((data->code_buffer)[current_elem + 1] != '\0'))
+        if(((asm_data->code_buffer)[current_elem] == '\0') && ((asm_data->code_buffer)[current_elem + 1] != '\0'))
         {
             beginning_check = 1;
         }
         else beginning_check = 0;
     }
 
-    strcat(data->code_buffer, "\0");
+    strcat(asm_data->code_buffer, "\0");
     
-    data->cmd_ptrs = (char**) calloc(data->cmd_ptrs_num, sizeof(char*));
-    if(!data->cmd_ptrs)
+    asm_data->cmd_ptrs = (char**) calloc(asm_data->cmd_ptrs_num, sizeof(char*));
+    if(!asm_data->cmd_ptrs)
     {
         printf("ERROR!(cmd_ptrs)");
     }
 
-    strcat(data->code_buffer, "\0");
+    strcat(asm_data->code_buffer, "\0");
 
     beginning_check = 1;
 
-    data->cmd_ptrs_num = 0;
+    asm_data->cmd_ptrs_num = 0;
 
-    for(size_t current_elem = 0; current_elem < data->code_buffer_size; current_elem++)
+    for(size_t current_elem = 0; current_elem < asm_data->code_buffer_size; current_elem++)
     {
         if(beginning_check)
         {
-            (data->cmd_ptrs)[data->cmd_ptrs_num] = ((data->code_buffer) + current_elem);
+            (asm_data->cmd_ptrs)[asm_data->cmd_ptrs_num] = ((asm_data->code_buffer) + current_elem);
 
-            (data->cmd_ptrs_num)++;
+            (asm_data->cmd_ptrs_num)++;
         }
 
-        if(((data->code_buffer)[current_elem] == '\0') && ((data->code_buffer)[current_elem + 1] != '\0')) beginning_check = 1;
+        if(((asm_data->code_buffer)[current_elem] == '\0') && ((asm_data->code_buffer)[current_elem + 1] != '\0')) beginning_check = 1;
         else beginning_check = 0;
     }
 
-    char* cmd = (char*) calloc(100, sizeof(char));
+    char* cmd = (char*) calloc(100, sizeof(char));// TODO insert into struct
     if(!cmd)
     {
         printf("ERROR!(cmd)");
@@ -99,19 +115,18 @@ int assembler(Assembler* data, FILE* code_data)
         return 1;
     }
 
-    data->machine_code = (int*) calloc((size_t)10000, sizeof(int));
-    if(!data->machine_code)
+    asm_data->machine_code = (int*) calloc((size_t)10000, sizeof(int));
+    if(!asm_data->machine_code)
     {
         printf("ERROR!(machine code)");
 
         return 1;
     }
 
-    //data->lables_array = (char**) calloc(100, 20*sizeof(char*));
+    //asm_data->lables_array = (char**) calloc(100, 20*sizeof(char*));
 
     size_t machine_code_elem = 0;
-
-    data->cmd_ptrs_num = 0;
+    asm_data->cmd_ptrs_num = 0;
     
     //TODO метки
     //TODO дебаг джампов и всего
@@ -119,116 +134,54 @@ int assembler(Assembler* data, FILE* code_data)
 
     while(1)  //TODO macro(антикопипаст)
     {
-        sscanf(data->cmd_ptrs[data->cmd_ptrs_num], "%s", cmd);
+        sscanf(asm_data->cmd_ptrs[asm_data->cmd_ptrs_num], "%s", cmd);
 
         int cmd_type = read_user_code(cmd);
         
         if(cmd_type == PUSH)
         {
-            data->machine_code[machine_code_elem] = cmd_type;
-            machine_code_elem++;
-
-            data->cmd_ptrs[data->cmd_ptrs_num] += strlen("push");
-
-            sscanf(data->cmd_ptrs[data->cmd_ptrs_num], "%s", cmd);
-            
-            int arg = atoi(cmd);
-
-            data->machine_code[machine_code_elem] = arg;
-            machine_code_elem++;
-
-            (data->machine_code_size)++;
+            ArgCmd("push", cmd_type);
         }
         else if(cmd_type == PUSHR)
         {
-            data->machine_code[machine_code_elem] = cmd_type;
-            machine_code_elem++;
-
-            data->code_buffer += strlen("pushr");
-
-            sscanf(data->cmd_ptrs[data->cmd_ptrs_num], "%s", cmd);
-
-            int reg_num = (int) cmd[0] - '0';
-
-            data->machine_code[machine_code_elem] = reg_num;
-            machine_code_elem++;
-
-            (data->machine_code_size)++;
+            ArgCmd("pushr", cmd_type);
         }
         else if(cmd_type == POPR)
         {
-            data->machine_code[machine_code_elem] = cmd_type;
-            machine_code_elem++;
-
-            data->code_buffer += strlen("popr");
-
-            sscanf(data->cmd_ptrs[data->cmd_ptrs_num], "%s", cmd);
-
-            int reg_num = (int) cmd[0] - '0';
-
-            data->machine_code[machine_code_elem] = reg_num;
-            machine_code_elem++;
-
-            (data->machine_code_size)++;
+            ArgCmd("popr", cmd_type);
         }
         else if(cmd_type == JMP || cmd_type == JAE || cmd_type == JBE || cmd_type == JNE)
         {
-            data->machine_code[machine_code_elem] = cmd_type;
-            machine_code_elem++;
-
-            data->cmd_ptrs[data->cmd_ptrs_num] += strlen("jmp");
-
-            sscanf(data->cmd_ptrs[data->cmd_ptrs_num], "%s", cmd);
-
-            int ip_num = atoi(cmd);
-
-            data->machine_code[machine_code_elem] = ip_num;
-            machine_code_elem++;
-
-            (data->machine_code_size)++;
+            ArgCmd("xxx", cmd_type);
         }
         else if(cmd_type == JA || cmd_type == JB || cmd_type == JE)
         {
-            data->machine_code[machine_code_elem] = cmd_type;
-            machine_code_elem++;
-
-            data->cmd_ptrs[data->cmd_ptrs_num] += strlen("ja");
-
-            sscanf(data->cmd_ptrs[data->cmd_ptrs_num], "%s", cmd);
-
-            int ip_num = atoi(cmd);
-
-            data->machine_code[machine_code_elem] = ip_num;
-            machine_code_elem++;
-
-            (data->machine_code_size)++;
+            ArgCmd("xx", cmd_type);
         }
         else if(cmd_type >= POP && cmd_type <= PROCDUMP)
         {
-            data->machine_code[machine_code_elem] = cmd_type;
-            machine_code_elem++;
+            NonArgCmd(cmd_type);
         }
         else if(cmd_type == HLT)
         {
-            data->machine_code[machine_code_elem] = cmd_type;
-            machine_code_elem++;
+            NonArgCmd(cmd_type);
 
             break;
         }
         else printf("Assembler ERROR: %d", cmd_type);
 
-        (data->cmd_ptrs_num)++;
+        (asm_data->cmd_ptrs_num)++;
 
-        (data->machine_code_size)++;
+        (asm_data->machine_code_size)++;
     }
 
-    data->machine_code_size = machine_code_elem;
+    asm_data->machine_code_size = machine_code_elem;
 
     FILE* asm_bin = fopen(output_file_name, "w");
 
-    for(machine_code_elem = 0; machine_code_elem < data->machine_code_size; machine_code_elem++)
+    for(machine_code_elem = 0; machine_code_elem < asm_data->machine_code_size; machine_code_elem++)
     {
-        fprintf(asm_bin, "%d", data->machine_code[machine_code_elem]);
+        fprintf(asm_bin, "%d", asm_data->machine_code[machine_code_elem]);
     }
     
 

@@ -8,6 +8,8 @@
 #include "processor.h"
 #include "proc_dump.h"
 
+// TODO macro
+
 int processor(Assembler* asm_data, SPU* spu_data)
 {
     assert(asm_data);

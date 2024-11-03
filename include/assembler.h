@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#include "..\..\stack\include\INCLUDE.h"
+#include "../../stack/include/INCLUDE.h"
 
 struct Assembler
 {
@@ -67,7 +67,7 @@ enum cmd
 #define file_name "code.txt"
 #define output_file_name "asm_bin.txt"
 
-#define bug printf("__DED__");
+#define bug printf("8=====>");
 
 int assembler(Assembler* data, FILE* code_data);
 
